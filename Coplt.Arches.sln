@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Coplt.Arches", "Coplt.Arches\Coplt.Arches.csproj", "{E85C80A5-65C3-4790-ADA0-9EE7C8F71E88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{CEB1025B-ACB0-4703-B0CC-0C660F11D1E3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E85C80A5-65C3-4790-ADA0-9EE7C8F71E88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E85C80A5-65C3-4790-ADA0-9EE7C8F71E88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E85C80A5-65C3-4790-ADA0-9EE7C8F71E88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E85C80A5-65C3-4790-ADA0-9EE7C8F71E88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEB1025B-ACB0-4703-B0CC-0C660F11D1E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEB1025B-ACB0-4703-B0CC-0C660F11D1E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEB1025B-ACB0-4703-B0CC-0C660F11D1E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEB1025B-ACB0-4703-B0CC-0C660F11D1E3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
