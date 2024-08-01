@@ -74,15 +74,17 @@ internal class ArcheType<T> : AArcheType
         private DynamicArcheAccess? Delegate;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DynamicArcheAccess Get(ArcheTypeUnitMeta unit, Type acc)
+        public unsafe DynamicArcheAccess Get(ArcheTypeUnitMeta unit, Type acc)
         {
             if (Delegate is not null) return Delegate;
             var f = ArcheAccesses.EmitAccess(unit, acc);
+            ArcheAccess<T> d;
 #if NETSTANDARD
-            return Delegate = (DynamicArcheAccess)f.CreateDelegate(typeof(DynamicArcheAccess));
+            d = (ArcheAccess<T>)f.CreateDelegate(typeof(ArcheAccess<T>));
 #else
-            return Delegate = f.CreateDelegate<DynamicArcheAccess>();
+            d = f.CreateDelegate<ArcheAccess<T>>();
 #endif
+            return (arr, index, access) => d((T[])arr, index, access);
         }
     }
 

@@ -6,7 +6,6 @@ using Coplt.Arches.Internal;
 namespace Coplt.Arches;
 
 public unsafe delegate void DynamicArcheAccess(Array arr, int index, void* access);
-
 public unsafe delegate void ArcheAccess<in C>(C[] arr, int index, void* access);
 
 public static class ArcheAccesses
@@ -51,6 +50,11 @@ public static class ArcheAccesses
                 foreach (var field in target.GetFields())
                 {
                     var type = field.FieldType;
+                    if (type is { IsByRef: false, IsByRefLike: false })
+                    {
+                        var field_type_meta = ArcheTypes.EmitGetTypeMeta(type);
+                        if (field_type_meta.IsTag) continue;
+                    }
                     if (type.IsGenericType)
                     {
                         var decl = type.GetGenericTypeDefinition();
@@ -126,7 +130,7 @@ public static class ArcheAccesses
             }
         }
     }
-    
+
     internal static class StaticAccess<C, A>
     {
         private static ArcheAccess<C>? Func;

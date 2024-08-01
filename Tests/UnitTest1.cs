@@ -59,12 +59,15 @@ public class Tests
         Console.WriteLine(arr);
 
         Console.WriteLine();
-        var acc = ArcheAccesses.EmitAccess(arch.Units[0], typeof(Acc));
+        var acc = ArcheAccesses.EmitAccess(atu, typeof(Acc));
         Console.WriteLine(acc);
+
+        var ref_acc = at.DynamicAccess(typeof(Acc));
 
         Console.WriteLine();
         Acc r = default;
         acc.Invoke(null, [arr, 3, (nuint)(void*)&r]);
+        ref_acc(arr, 3, &r);
         Console.WriteLine(r.a);
         r.a = 1;
         Console.WriteLine(r.a);
