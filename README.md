@@ -1,5 +1,7 @@
 # Coplt.Arches
 
+[![Nuget](https://img.shields.io/nuget/v/Coplt.Arches)](https://www.nuget.org/packages/Coplt.Arches/)
+
 Archetype is a dynamic structure  
 This library includes dynamic archetype emit and access method emit  
 This is not ECS, but you can use it to implement an archetype based ECS  
@@ -16,7 +18,7 @@ struct Foo
 struct Tag;
 
 
-var arch = ArcheTypes.EmitArcheType(
+ArcheTypeMeta arch = ArcheTypes.EmitArcheType(
 [
     typeof(int), 
     typeof(float), 
@@ -39,7 +41,7 @@ AArcheType at = atu.ArcheType;
 // AArcheType contains some dynamically generated utility methods, 
 // such as allocating arrays and generating access bindings
 
-var arr = at.AllocateArray(16);
+Array arr = at.AllocateArray(16);
 
 
 record struct Acc
@@ -65,7 +67,7 @@ ref struct RefAcc
     public RoRef<int> d;
     public RwRef<int> e;
 }
-var ref_acc = at.DynamicAccess(typeof(Acc));
+DynamicArcheAccess ref_acc = at.DynamicAccess(typeof(Acc));
 RefAcc r = default;
 ref_acc(arr, 3, &r);
 r.a++;
