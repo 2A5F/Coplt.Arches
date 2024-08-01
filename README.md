@@ -6,6 +6,10 @@ Archetype is a dynamic structure
 This library includes dynamic archetype emit and access method emit  
 This is not ECS, but you can use it to implement an archetype based ECS  
 
+### Todo
+
+- [ ] Callback access generation  
+
 ### Example
 
 ```csharp
