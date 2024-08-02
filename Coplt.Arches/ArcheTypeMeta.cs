@@ -38,7 +38,7 @@ public abstract class AArcheType
     public abstract unsafe void Access<A>(Array array, int index, A* acc);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract DynamicArcheAccess DynamicAccess(Type acc);
+    public abstract ArcheAccess DynamicAccess(Type acc);
 }
 
 internal class ArcheType<T> : AArcheType
@@ -59,38 +59,21 @@ internal class ArcheType<T> : AArcheType
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override unsafe void Access<A>(Array array, int index, A* acc)
-    {
-        var f = ArcheAccesses.StaticAccess<T, A>.Get(Unit);
-        f((T[])array, index, acc);
-    }
+    public override unsafe void Access<A>(Array array, int index, A* acc) => 
+        ArcheAccesses.StaticAccess<T, A>.Access((T[])array, index, acc);
 
     #region DynamicAccess
 
-    private readonly ConditionalWeakTable<Type, DynamicArcheAccessContainer> cache_DynamicAccess = new();
-
-    private class DynamicArcheAccessContainer
-    {
-        private DynamicArcheAccess? Delegate;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe DynamicArcheAccess Get(ArcheTypeUnitMeta unit, Type acc)
-        {
-            if (Delegate is not null) return Delegate;
-            var f = ArcheAccesses.EmitAccess(unit, acc);
-            ArcheAccess<T> d;
-#if NETSTANDARD
-            d = (ArcheAccess<T>)f.CreateDelegate(typeof(ArcheAccess<T>));
-#else
-            d = f.CreateDelegate<ArcheAccess<T>>();
-#endif
-            return (arr, index, access) => d((T[])arr, index, access);
-        }
-    }
+    // ReSharper disable once StaticMemberInGenericType
+    private static readonly ConditionalWeakTable<Type, ArcheAccess> cache_DynamicAccess = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override DynamicArcheAccess DynamicAccess(Type acc) =>
-        cache_DynamicAccess.GetOrCreateValue(acc).Get(Unit, acc);
+    public override ArcheAccess DynamicAccess(Type acc) =>
+        cache_DynamicAccess.GetValue(acc, static acc =>
+        {
+            var method = ArcheAccesses.EmitAccess(typeof(T), acc);
+            return method.CreateDelegate<ArcheAccess>();
+        });
 
     #endregion
 }

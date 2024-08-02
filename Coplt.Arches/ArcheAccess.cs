@@ -5,8 +5,7 @@ using Coplt.Arches.Internal;
 
 namespace Coplt.Arches;
 
-public unsafe delegate void DynamicArcheAccess(Array arr, int index, void* access);
-public unsafe delegate void ArcheAccess<in C>(C[] arr, int index, void* access);
+public unsafe delegate void ArcheAccess(Array arr, int index, void* access);
 
 public static class ArcheAccesses
 {
@@ -19,9 +18,28 @@ public static class ArcheAccesses
         return cache.GetOrCreateValue(target).GetOrCreateValue(unit.Type).Get(unit, target);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static MethodInfo EmitAccess(Type unit_type, Type target)
+    {
+        if (!target.IsValueType) throw new ArgumentException("target must be struct", nameof(target));
+        return cache.GetOrCreateValue(target).GetOrCreateValue(unit_type).Get(unit_type, target);
+    }
+
+    // ReSharper disable once ClassNeverInstantiated.Local
     private sealed class Container
     {
         private MethodInfo? impl;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public MethodInfo Get(Type unit_type, Type target)
+        {
+            // ReSharper disable once InconsistentlySynchronizedField
+            if (impl is not null)
+                // ReSharper disable once InconsistentlySynchronizedField
+                return impl;
+            var unit = ArcheTypes.GetUnit(unit_type);
+            return Get(unit, target);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MethodInfo Get(ArcheTypeUnitMeta unit, Type target)
         {
             // ReSharper disable once InconsistentlySynchronizedField
@@ -33,7 +51,7 @@ public static class ArcheAccesses
                 if (impl is not null) return impl;
                 var method = new DynamicMethod($"Coplt.Arches.Accesses.<>{target}",
                     MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(void),
-                    [unit.Type.MakeArrayType(), typeof(int), typeof(void*)], target, true);
+                    [typeof(Array), typeof(int), typeof(void*)], target, true);
                 var ilg = method.GetILGenerator();
 
                 var tar = ilg.DeclareLocal(target.MakePointerType());
@@ -43,6 +61,7 @@ public static class ArcheAccesses
                 ilg.Emit(OpCodes.Stloc, tar);
 
                 ilg.Emit(OpCodes.Ldarg_0);
+                ilg.Emit(OpCodes.Castclass, unit.Type.MakeArrayType());
                 ilg.Emit(OpCodes.Ldarg_1);
                 ilg.Emit(OpCodes.Ldelema, unit.Type);
                 ilg.Emit(OpCodes.Stloc, arche);
@@ -61,8 +80,7 @@ public static class ArcheAccesses
                         if (decl == typeof(RoRef<>))
                         {
                             var ty = type.GetGenericArguments()[0];
-                            if (!unit.Fields.TryGetValue(ty, out var type_meta))
-                                throw new ArgumentException($"{type} dose not in the archetype", nameof(target));
+                            if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
 
                             ilg.Emit(OpCodes.Ldloc, tar);
                             ilg.Emit(OpCodes.Ldarg_0);
@@ -76,8 +94,7 @@ public static class ArcheAccesses
                         else if (decl == typeof(RwRef<>))
                         {
                             var ty = type.GetGenericArguments()[0];
-                            if (!unit.Fields.TryGetValue(ty, out var type_meta))
-                                throw new ArgumentException($"{type} dose not in the archetype", nameof(target));
+                            if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
 
                             ilg.Emit(OpCodes.Ldloc, tar);
                             ilg.Emit(OpCodes.Ldarg_0);
@@ -91,8 +108,7 @@ public static class ArcheAccesses
                         else if (decl == typeof(Span<>) || decl == typeof(ReadOnlySpan<>))
                         {
                             var ty = type.GetGenericArguments()[0];
-                            if (!unit.Fields.TryGetValue(ty, out var type_meta))
-                                throw new ArgumentException($"{type} dose not in the archetype", nameof(target));
+                            if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
 
                             ilg.Emit(OpCodes.Ldloc, tar);
                             ilg.Emit(OpCodes.Ldloc, arche);
@@ -105,9 +121,8 @@ public static class ArcheAccesses
                     else if (type.IsByRef)
                     {
                         var ty = type.GetElementType()!;
-                        if (!unit.Fields.TryGetValue(ty, out var type_meta))
-                            throw new ArgumentException($"{type} dose not in the archetype", nameof(target));
-
+                        if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
+                        
                         ilg.Emit(OpCodes.Ldloc, tar);
                         ilg.Emit(OpCodes.Ldloc, arche);
                         ilg.Emit(OpCodes.Ldflda, type_meta.Field);
@@ -115,9 +130,8 @@ public static class ArcheAccesses
                         continue;
                     }
                     {
-                        if (!unit.Fields.TryGetValue(type, out var type_meta))
-                            throw new ArgumentException($"{type} dose not in the archetype", nameof(target));
-
+                        if (!unit.Fields.TryGetValue(type, out var type_meta)) continue;
+                        
                         ilg.Emit(OpCodes.Ldloc, tar);
                         ilg.Emit(OpCodes.Ldloc, arche);
                         ilg.Emit(OpCodes.Ldfld, type_meta.Field);
@@ -133,16 +147,19 @@ public static class ArcheAccesses
 
     internal static class StaticAccess<C, A>
     {
-        private static ArcheAccess<C>? Func;
-
-#if NETSTANDARD
+        public static readonly MethodInfo Method = EmitAccess(typeof(C), typeof(A));
+        // ReSharper disable once StaticMemberInGenericType
+        public static readonly ArcheAccess Func = Method.CreateDelegate<ArcheAccess>();
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ArcheAccess<C> Get(ArcheTypeUnitMeta unit) =>
-            Func ??= (ArcheAccess<C>)EmitAccess(unit, typeof(A)).CreateDelegate(typeof(ArcheAccess<C>));
-#else
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ArcheAccess<C> Get(ArcheTypeUnitMeta unit) =>
-            Func ??= EmitAccess(unit, typeof(A)).CreateDelegate<ArcheAccess<C>>();
-#endif
+        public static unsafe void Access(C[] array, int index, A* acc) => Func(array, index, acc);
     }
+
+    // private sealed class CallbackContainer
+    // {
+    //     private MethodInfo? impl;
+    //     public MethodInfo Get(ArcheTypeUnitMeta unit, Type target)
+    //     {
+    //         return null!;
+    //     }
+    // }
 }

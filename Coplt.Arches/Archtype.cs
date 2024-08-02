@@ -220,7 +220,7 @@ public static partial class ArcheTypes
 
         var impl = (AArcheType)Activator.CreateInstance(typeof(ArcheType<>).MakeGenericType(type))!;
 
-        return impl.Unit = new()
+        var unit = impl.Unit = new()
         {
             Type = type,
             IncludeTypes = include_types,
@@ -232,7 +232,14 @@ public static partial class ArcheTypes
             AllocateArray = alloc_array,
             AllocateUninitializedArray = alloc_un_init_array,
         };
+        archeTypeUnitMetaCache.Add(unit.Type, unit);
+        return unit;
     }
+
+    private static readonly ConditionalWeakTable<Type, ArcheTypeUnitMeta> archeTypeUnitMetaCache = new();
+
+    internal static ArcheTypeUnitMeta GetUnit(Type type) =>
+        archeTypeUnitMetaCache.TryGetValue(type, out var val) ? val : null!;
 
     #endregion
 }
