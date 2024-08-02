@@ -43,9 +43,9 @@ ArcheTypeUnitMeta atu = arch.Units[0];
 AArcheType at = atu.ArcheType;
 
 // AArcheType contains some dynamically generated utility methods, 
-// such as allocating arrays and generating access bindings
+// such as create chunk instance、 generating access bindings
 
-Array arr = at.AllocateArray(16);
+object chunk = at.Create();
 
 
 record struct Acc
@@ -58,7 +58,7 @@ record struct Acc
 // Automatically generate access bindings
 // The access structure can be on the heap, which means it can be passed in linq
 
-at.Access(arr, 3, out Acc acc);
+at.UnsafeAccess(chunk, 3, out Acc acc);
 Console.WriteLine(acc);
 
 
@@ -71,9 +71,9 @@ ref struct RefAcc
     public RoRef<int> d;
     public RwRef<int> e;
 }
-DynamicArcheAccess ref_acc = at.DynamicAccess(typeof(Acc));
+ArcheAccess ref_acc = at.DynamicAccess(typeof(Acc));
 RefAcc r = default;
-ref_acc(arr, 3, &r);
+ref_acc(chunk, 0, 3, &r);
 r.a++;
 
 // Access structures also support ref structures

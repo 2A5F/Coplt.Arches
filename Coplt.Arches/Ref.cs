@@ -5,10 +5,10 @@ namespace Coplt.Arches;
 
 public readonly record struct RoRef<T>
 {
-    private readonly UnsafeArrayRef inner;
+    private readonly UnsafeRef inner;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RoRef(UnsafeArrayRef inner)
+    internal RoRef(UnsafeRef inner)
     {
         this.inner = inner;
     }
@@ -25,10 +25,10 @@ public readonly record struct RoRef<T>
 
 public readonly record struct RwRef<T>
 {
-    private readonly UnsafeArrayRef inner;
+    private readonly UnsafeRef inner;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RwRef(UnsafeArrayRef inner)
+    internal RwRef(UnsafeRef inner)
     {
         this.inner = inner;
     }

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Coplt.Arches": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

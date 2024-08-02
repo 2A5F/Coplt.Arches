@@ -19,7 +19,8 @@ public class Tests
 
     private struct Tag;
 
-    private ref struct Acc
+#if NET8_0
+    private ref struct RefAcc
     {
         public int v;
         public ref int a;
@@ -28,8 +29,9 @@ public class Tests
         public RoRef<int> d;
         public RwRef<int> e;
     }
+#endif
 
-    private record struct Acc2
+    private record struct Acc
     {
         public int a;
         public RwRef<Vector128<float>> v;
@@ -43,7 +45,7 @@ public class Tests
         [
             typeof(int), typeof(float), typeof(Foo), typeof(object), typeof(Vector128<float>), typeof(Tag),
             typeof(bool), typeof(byte)
-        ], new ArcheTypeOptions());
+        ], new ArcheTypeOptions() { });
 
         var atu = arch.Units[0];
         var at = atu.ArcheType;
@@ -51,34 +53,41 @@ public class Tests
         Console.WriteLine(atu.TypeMeta);
         Console.WriteLine();
         Console.WriteLine(string.Join("\n", arch.Units[0].Fields.Values.OrderBy(a => a.Index)));
-        Console.WriteLine();
-        Console.WriteLine(string.Join("\n", arch.Units[0].GetRef.Values.OrderBy(a => a.Index)));
 
         Console.WriteLine();
-        var arr = at.AllocateArray(16);
-        Console.WriteLine(arr);
+        var obj = at.Create();
+        var obj_addr = Unsafe.As<object, nint>(ref obj);
+        Console.WriteLine(obj);
+        Console.WriteLine(obj_addr);
 
+#if NET8_0
         Console.WriteLine();
-        var ref_acc = at.DynamicAccess(typeof(Acc));
+        var ref_acc = at.DynamicAccess(typeof(RefAcc));
         Console.WriteLine(ref_acc);
 
         Console.WriteLine();
-        Acc r = default;
-        ref_acc(arr, 3, &r);
+        RefAcc r = default;
+        ref_acc(obj, 0, 3, &r);
+        var r_addr = (nint)(void*)&r;
+        var ra_addr = (nint)(void*)&r.a;
+        Console.WriteLine(r_addr);
+        Console.WriteLine(ra_addr);
         Console.WriteLine(r.a);
-        r.a = 1;
+        r.a = 123;
         Console.WriteLine(r.a);
-        Assert.That(r.a, Is.EqualTo(1));
+        Assert.That(r.a, Is.EqualTo(123));
+#endif
+
+        Console.WriteLine();
+        at.UnsafeAccess(obj, 3, out Acc acc);
+        Console.WriteLine(acc);
+
+        acc.v.V = Vector128.Create(1f, 2, 3, 4);
+        Console.WriteLine(acc);
+        Assert.That(acc.v.V, Is.EqualTo(Vector128.Create(1f, 2, 3, 4)));
         
         Console.WriteLine();
-        at.Access(arr, 3, out Acc2 acc2);
-        Console.WriteLine(acc2);
-        acc2.v.V = Vector128.Create(1f, 2, 3, 4);
-        Console.WriteLine(acc2);
-        Assert.That(acc2.a, Is.EqualTo(1));
-        
-        Console.WriteLine();
-        at.Access(arr, 3, out (int a, float b, Vector128<float> c) acc3);
+        at.UnsafeAccess(obj, 3, out (int a, float b, Vector128<float> c) acc3);
         Console.WriteLine(acc3);
     }
 }

@@ -151,6 +151,7 @@ public static partial class ArcheTypes
                 .Where(static a => !a.IsManaged)
                 .OrderByDescending(static a => a.Size)
                 .ThenByDescending(static a => a.Align)
+                .ThenBy(static a => a.Type.Name)
                 .ThenBy(static a => a.Type.GetHashCode())
                 .ToList();
             var managed = types
@@ -158,12 +159,13 @@ public static partial class ArcheTypes
                 .Where(static a => a.IsManaged)
                 .OrderByDescending(static a => a.Size)
                 .ThenByDescending(static a => a.Align)
+                .ThenBy(static a => a.Type.Name)
                 .ThenBy(static a => a.Type.GetHashCode())
                 .ToList();
             ArcheTypeUnitMeta? g_un_managed = null;
-            if (un_managed.Count > 0) g_un_managed = EmitArcheType(un_managed);
+            if (un_managed.Count > 0) g_un_managed = EmitArcheType(un_managed, options);
             ArcheTypeUnitMeta? g_managed = null;
-            if (managed.Count > 0) g_managed = EmitArcheType(managed);
+            if (managed.Count > 0) g_managed = EmitArcheType(managed, options);
             groups = (g_un_managed, g_managed) switch
             {
                 ({ } a, { } b) => [a, b],
@@ -178,9 +180,10 @@ public static partial class ArcheTypes
                 .Where(static a => !a.IsTag)
                 .OrderByDescending(static a => a.Size)
                 .ThenByDescending(static a => a.Align)
+                .ThenBy(static a => a.Type.Name)
                 .ThenBy(static a => a.Type.GetHashCode())
                 .ToList();
-            groups = [EmitArcheType(ts)];
+            groups = [EmitArcheType(ts, options)];
         }
 
         return new()
@@ -189,32 +192,26 @@ public static partial class ArcheTypes
         };
     }
 
-    private static ArcheTypeUnitMeta EmitArcheType(List<TypeMeta> types)
+    private static ArcheTypeUnitMeta EmitArcheType(List<TypeMeta> types, in ArcheTypeOptions options)
     {
-        var container = TypeContainers.EmitGet(types.Count);
+        var stride = options.Stride;
+        if (stride <= 0)
+        {
+            var sum_size = types.Sum(static t => t.Size);
+            if (options.PageSize < sum_size) throw new ArgumentException("The page is too small to fit any archetype");
+            stride = options.PageSize / sum_size;
+        }
+
+        var container = TypeContainers.EmitGet(types.Count, stride, options.GenerateStructure);
         var include_types = types.Select(static t => t.Type).ToArray();
         var type = container.MakeGenericType(include_types);
 
         var fields = types.Select((t, j) =>
         {
-            var field = type.GetField($"_{j}", BindingFlags.Public | BindingFlags.Instance)!;
-            return new FieldMeta(field, t, j);
+            var field = type.GetField($"{j}", BindingFlags.Public | BindingFlags.Instance)!;
+            return new FieldMeta(field, EmitGetTypeMeta(field.FieldType), t, j);
         }).ToFrozenDictionary(static a => a.Type.Type, static a => a);
 
-        var get = types.Select((t, j) =>
-        {
-            var field = type.GetMethod($"Get{j}", BindingFlags.Public | BindingFlags.Instance)!;
-            return new MethodMeta(field, t, j);
-        }).ToFrozenDictionary(static a => a.Type.Type, static a => a);
-
-        var get_ref = types.Select((t, j) =>
-        {
-            var field = type.GetMethod($"GetRef{j}", BindingFlags.Public | BindingFlags.Instance)!;
-            return new MethodMeta(field, t, j);
-        }).ToFrozenDictionary(static a => a.Type.Type, static a => a);
-
-        var alloc_array = MethodInfo_AllocateArray().MakeGenericMethod(type);
-        var alloc_un_init_array = MethodInfo_AllocateUninitializedArray().MakeGenericMethod(type);
 
         var type_meta = EmitGetTypeMeta(type);
 
@@ -225,12 +222,9 @@ public static partial class ArcheTypes
             Type = type,
             IncludeTypes = include_types,
             TypeMeta = type_meta,
+            Stride = stride,
             ArcheType = impl,
             Fields = fields,
-            Get = get,
-            GetRef = get_ref,
-            AllocateArray = alloc_array,
-            AllocateUninitializedArray = alloc_un_init_array,
         };
         archeTypeUnitMetaCache.Add(unit.Type, unit);
         return unit;

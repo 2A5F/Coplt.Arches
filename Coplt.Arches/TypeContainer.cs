@@ -7,42 +7,27 @@ namespace Coplt.Arches;
 
 public static class TypeContainers
 {
-    private static readonly ConcurrentDictionary<int, Type> cache = new();
+    private static readonly ConcurrentDictionary<(int len, int stride, bool structure), Type> cache = new();
 
     private static readonly AssemblyBuilder asm =
         AssemblyBuilder.DefineDynamicAssembly(new("Coplt.Arches.TypeContainers"), AssemblyBuilderAccess.Run);
     private static readonly ModuleBuilder mod = asm.DefineDynamicModule("Coplt.Arches.TypeContainers");
 
-    public static Type EmitGet(int len)
+    public static Type EmitGet(int len, int stride, bool structure)
     {
         if (len <= 0) throw new ArgumentOutOfRangeException();
-        return cache.GetOrAdd(len, static len =>
+        return cache.GetOrAdd((len, stride, structure), static input =>
         {
-            var name = $"Coplt.Arches.TypeContainer`{len}";
-            var typ = mod.DefineType(name, TypeAttributes.Public | TypeAttributes.Sealed, typeof(ValueType));
+            var (len, stride, structure) = input;
+            var arr = FixedArrays.EmitGet(stride);
+            var name = $"Coplt.Arches.TypeContainer{(structure ? "V" : "")}{stride}`{len}";
+            var typ = mod.DefineType(name, TypeAttributes.Public | TypeAttributes.Sealed,
+                structure ? typeof(ValueType) : typeof(object));
             var generics = typ.DefineGenericParameters(Enumerable.Range(0, len).Select(static n => $"T{n}").ToArray());
             for (var i = 0; i < len; i++)
             {
-                var field = typ.DefineField($"_{i}", generics[i], FieldAttributes.Public);
+                var field = typ.DefineField($"{i}", arr.MakeGenericType(generics[i]), FieldAttributes.Public);
                 field.SetCustomAttribute(typeof(JsonIncludeAttribute).GetConstructor([])!, []);
-
-                {
-                    var method = typ.DefineMethod($"GetRef{i}", MethodAttributes.Public, CallingConventions.HasThis, generics[i].MakeByRefType(), []);
-                    method.SetImplementationFlags(MethodImplAttributes.AggressiveInlining);
-                    var ilg = method.GetILGenerator();
-                    ilg.Emit(OpCodes.Ldarg_0);
-                    ilg.Emit(OpCodes.Ldflda);
-                    ilg.Emit(OpCodes.Ret);
-                }
-
-                {
-                    var method = typ.DefineMethod($"Get{i}", MethodAttributes.Public, CallingConventions.HasThis, generics[i], []);
-                    method.SetImplementationFlags(MethodImplAttributes.AggressiveInlining);
-                    var ilg = method.GetILGenerator();
-                    ilg.Emit(OpCodes.Ldarg_0);
-                    ilg.Emit(OpCodes.Ldfld);
-                    ilg.Emit(OpCodes.Ret);
-                }
             }
             // ReSharper disable once RedundantSuppressNullableWarningExpression
             return typ.CreateType()!;
