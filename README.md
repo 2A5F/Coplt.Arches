@@ -36,14 +36,10 @@ ArcheTypeMeta arch = ArcheTypes.EmitArcheType(
     typeof(byte),
 ], new ArcheTypeOptions());
 
-// ArcheTypeOptions can be used to separate managed and unmanaged types, 
-// which will result in the output of two ArcheTypeUnitMeta
-
-ArcheTypeUnitMeta atu = arch.Units[0];
-AArcheType at = atu.ArcheType;
-
 // AArcheType contains some dynamically generated utility methods, 
 // such as create chunk instance、 generating access bindings
+
+AArcheType at = arch.ArcheType;
 
 object chunk = at.Create();
 

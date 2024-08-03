@@ -12,10 +12,10 @@ public static class ArcheAccesses
     private static readonly ConditionalWeakTable<Type, ConditionalWeakTable<Type, Container>> cache = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodInfo EmitAccess(ArcheTypeUnitMeta unit, Type target)
+    public static MethodInfo EmitAccess(ArcheTypeMeta meta, Type target)
     {
         if (!target.IsValueType) throw new ArgumentException("target must be struct", nameof(target));
-        return cache.GetOrCreateValue(target).GetOrCreateValue(unit.Type).Get(unit, target);
+        return cache.GetOrCreateValue(target).GetOrCreateValue(meta.Type).Get(meta, target);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -36,11 +36,11 @@ public static class ArcheAccesses
             if (impl is not null)
                 // ReSharper disable once InconsistentlySynchronizedField
                 return impl;
-            var unit = ArcheTypes.GetUnit(unit_type);
-            return Get(unit, target);
+            var meta = ArcheTypes.GetMeta(unit_type);
+            return Get(meta, target);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public MethodInfo Get(ArcheTypeUnitMeta unit, Type target)
+        public MethodInfo Get(ArcheTypeMeta meta, Type target)
         {
             // ReSharper disable once InconsistentlySynchronizedField
             if (impl is not null)
@@ -75,7 +75,7 @@ public static class ArcheAccesses
                         if (decl == typeof(RoRef<>))
                         {
                             var ty = type.GetGenericArguments()[0];
-                            if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
+                            if (!meta.Fields.TryGetValue(ty, out var type_meta)) continue;
 
                             ilg.Emit(OpCodes.Ldloc, tar);
                             ilg.Emit(OpCodes.Ldarg_0);
@@ -94,7 +94,7 @@ public static class ArcheAccesses
                         if (decl == typeof(RwRef<>))
                         {
                             var ty = type.GetGenericArguments()[0];
-                            if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
+                            if (!meta.Fields.TryGetValue(ty, out var type_meta)) continue;
 
                             ilg.Emit(OpCodes.Ldloc, tar);
                             ilg.Emit(OpCodes.Ldarg_0);
@@ -114,7 +114,7 @@ public static class ArcheAccesses
                         {
                             var ty = type.GetGenericArguments()[0];
                             if (Utils.IsTag(ty)) continue;
-                            if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
+                            if (!meta.Fields.TryGetValue(ty, out var type_meta)) continue;
 
                             ilg.Emit(OpCodes.Ldloc, tar);
                             ilg.Emit(OpCodes.Ldloc, arche);
@@ -133,7 +133,7 @@ public static class ArcheAccesses
                     {
                         var ty = type.GetElementType()!;
                         if (Utils.IsTag(ty)) continue;
-                        if (!unit.Fields.TryGetValue(ty, out var type_meta)) continue;
+                        if (!meta.Fields.TryGetValue(ty, out var type_meta)) continue;
 
                         ilg.Emit(OpCodes.Ldloc, tar);
                         ilg.Emit(OpCodes.Ldloc, arche);
@@ -148,7 +148,7 @@ public static class ArcheAccesses
                     }
                     {
                         if (Utils.IsTag(type)) continue;
-                        if (!unit.Fields.TryGetValue(type, out var type_meta)) continue;
+                        if (!meta.Fields.TryGetValue(type, out var type_meta)) continue;
 
                         ilg.Emit(OpCodes.Ldloc, tar);
                         ilg.Emit(OpCodes.Ldloc, arche);
@@ -174,9 +174,9 @@ public static class ArcheAccesses
         callback_cache = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodInfo EmitCallbackAccess(ArcheTypeUnitMeta unit, MethodInfo target)
+    public static MethodInfo EmitCallbackAccess(ArcheTypeMeta meta, MethodInfo target)
     {
-        return callback_cache.GetOrCreateValue(target).GetOrCreateValue(unit.Type).Get(unit, target);
+        return callback_cache.GetOrCreateValue(target).GetOrCreateValue(meta.Type).Get(meta, target);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -195,11 +195,11 @@ public static class ArcheAccesses
             if (impl is not null)
                 // ReSharper disable once InconsistentlySynchronizedField
                 return impl;
-            var unit = ArcheTypes.GetUnit(unit_type);
-            return Get(unit, target);
+            var meta = ArcheTypes.GetMeta(unit_type);
+            return Get(meta, target);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public MethodInfo Get(ArcheTypeUnitMeta unit, MethodInfo target)
+        public MethodInfo Get(ArcheTypeMeta meta, MethodInfo target)
         {
             // todo
             return null!;

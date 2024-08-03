@@ -9,39 +9,33 @@ namespace Coplt.Arches;
 /// <summary>
 /// A unique type id determined at runtime
 /// </summary>
-public readonly record struct TypeId
+public readonly record struct TypeId(int Id)
 {
-    private readonly long Id;
-
-    #region Ctor
-
-    public TypeId(long Id)
-    {
-        this.Id = Id;
-    }
-
-    #endregion
-
+    public readonly int Id = Id;
+    
     #region TheId
 
-    private static long s_id_inc;
+    private static int s_id_inc;
 
-    private static readonly ConcurrentDictionary<long, Type> s_types = new();
+    private static readonly ConcurrentDictionary<int, WeakReference<Type>> s_types = new();
 
     private static class TheId<T>
     {
         // ReSharper disable once StaticMemberInGenericType
-        public static readonly long s_id_value = Interlocked.Increment(ref s_id_inc);
+        public static readonly int s_id_value = Interlocked.Increment(ref s_id_inc);
 
         static TheId()
         {
-            s_types[s_id_value] = typeof(T);
+            s_types[s_id_value] = new(typeof(T));
+            s_type_to_id.Add(typeof(T), s_id_value);
         }
     }
 
     #endregion
 
     #region Create
+
+    private static readonly ConditionalWeakTable<Type, object> s_type_to_id = new();
 
     /// <summary>
     /// Create statically
@@ -61,12 +55,21 @@ public readonly record struct TypeId
         return IL.Return<MethodInfo>();
     }
 
+    /// <summary>
+    /// Dynamic get
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TypeId DynOf(Type type) => (TypeId)s_type_to_id.GetValue(type, static type => EmitOf(type));
+
     #endregion
 
     #region ToType
 
+    /// <summary>
+    /// Get the type, if the type is unloaded will return null
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Type ToType() => s_types[Id];
+    public Type? ToType() => s_types[Id].TryGetTarget(out var t) ? t : null;
 
     #endregion
 

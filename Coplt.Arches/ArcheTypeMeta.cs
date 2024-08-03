@@ -1,15 +1,12 @@
-﻿using System.Collections.Frozen;
+﻿using System.Collections;
+using System.Collections.Frozen;
+using System.Collections.Specialized;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Coplt.Arches;
 
 public record ArcheTypeMeta
-{
-    public required ArcheTypeUnitMeta[] Units { get; init; }
-}
-
-public record ArcheTypeUnitMeta
 {
     public required Type Type { get; init; }
     public required Type[] IncludeTypes { get; init; }
@@ -21,8 +18,8 @@ public record ArcheTypeUnitMeta
 
 public abstract class AArcheType
 {
-    public ArcheTypeUnitMeta Unit { get; internal set; } = null!;
-
+    public Bits Bits { get; internal set; }
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public abstract object Create();
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

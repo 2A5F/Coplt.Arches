@@ -47,12 +47,11 @@ public class Tests
             typeof(bool), typeof(byte)
         ], new ArcheTypeOptions() { });
 
-        var atu = arch.Units[0];
-        var at = atu.ArcheType;
+        var at = arch.ArcheType;
 
-        Console.WriteLine(atu.TypeMeta);
+        Console.WriteLine(arch.ArcheType);
         Console.WriteLine();
-        Console.WriteLine(string.Join("\n", arch.Units[0].Fields.Values.OrderBy(a => a.Index)));
+        Console.WriteLine(string.Join("\n", arch.Fields.Values.OrderBy(a => a.Index)));
 
         Console.WriteLine();
         var obj = at.Create();

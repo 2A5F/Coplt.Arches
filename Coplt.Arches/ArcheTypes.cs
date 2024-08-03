@@ -1,5 +1,7 @@
-﻿using System.Collections.Frozen;
+﻿using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -79,7 +81,7 @@ public static partial class ArcheTypes
 
     #region TypeMeta
 
-    public static TypeMeta GetTypeMeta<T>() => new(typeof(T), SizeOf<T>(), AlignOf<T>(), IsManaged<T>(),
+    public static TypeMeta GetTypeMeta<T>() => new(typeof(T), TypeId.Of<T>(), SizeOf<T>(), AlignOf<T>(), IsManaged<T>(),
         !typeof(T).IsPrimitive && SizeOf<T>() == 1 &&
         typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic).Length is 0);
 
@@ -142,57 +144,23 @@ public static partial class ArcheTypes
 
     public static ArcheTypeMeta EmitArcheType(ImmutableHashSet<TypeMeta> types, in ArcheTypeOptions options)
     {
-        ArcheTypeUnitMeta[] groups;
-        if (types.Count is 0) groups = [];
-        else if (options.SplitManaged)
-        {
-            var un_managed = types
-                .Where(static a => !a.IsTag)
-                .Where(static a => !a.IsManaged)
-                .OrderByDescending(static a => a.Size)
-                .ThenByDescending(static a => a.Align)
-                .ThenBy(static a => a.Type.Name)
-                .ThenBy(static a => a.Type.GetHashCode())
-                .ToList();
-            var managed = types
-                .Where(static a => !a.IsTag)
-                .Where(static a => a.IsManaged)
-                .OrderByDescending(static a => a.Size)
-                .ThenByDescending(static a => a.Align)
-                .ThenBy(static a => a.Type.Name)
-                .ThenBy(static a => a.Type.GetHashCode())
-                .ToList();
-            ArcheTypeUnitMeta? g_un_managed = null;
-            if (un_managed.Count > 0) g_un_managed = EmitArcheType(un_managed, options);
-            ArcheTypeUnitMeta? g_managed = null;
-            if (managed.Count > 0) g_managed = EmitArcheType(managed, options);
-            groups = (g_un_managed, g_managed) switch
-            {
-                ({ } a, { } b) => [a, b],
-                ({ } a, null) => [a],
-                (null, { } b) => [b],
-                _ => [],
-            };
-        }
-        else
-        {
-            var ts = types
-                .Where(static a => !a.IsTag)
-                .OrderByDescending(static a => a.Size)
-                .ThenByDescending(static a => a.Align)
-                .ThenBy(static a => a.Type.Name)
-                .ThenBy(static a => a.Type.GetHashCode())
-                .ToList();
-            groups = [EmitArcheType(ts, options)];
-        }
-
-        return new()
-        {
-            Units = groups
-        };
+        var ts = SortType(types);
+        return EmitArcheTypeSorted(ts, options);
     }
 
-    private static ArcheTypeUnitMeta EmitArcheType(List<TypeMeta> types, in ArcheTypeOptions options)
+    public static ArcheTypeMeta EmitArcheTypeSorted(List<TypeMeta> types, in ArcheTypeOptions options) =>
+        EmitArcheType(types, options);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<TypeMeta> SortType(ImmutableHashSet<TypeMeta> types) => types
+        .Where(static a => !a.IsTag)
+        .OrderByDescending(static a => a.Size)
+        .ThenByDescending(static a => a.Align)
+        .ThenBy(static a => a.Type.Name)
+        .ThenBy(static a => a.Type.GetHashCode())
+        .ToList();
+
+    private static ArcheTypeMeta EmitArcheType(List<TypeMeta> types, in ArcheTypeOptions options)
     {
         var stride = options.Stride;
         if (stride <= 0)
@@ -215,9 +183,14 @@ public static partial class ArcheTypes
 
         var type_meta = EmitGetTypeMeta(type);
 
-        var impl = (AArcheType)Activator.CreateInstance(typeof(ArcheType<>).MakeGenericType(type))!;
+        var min_id = types.Min(static t => t.Id.Id);
+        var max_id = types.Max(static t => t.Id.Id);
+        var bits = Bits.Create(min_id, max_id, types.Select(static t => t.Id.Id));
 
-        var unit = impl.Unit = new()
+        var impl = (AArcheType)Activator.CreateInstance(typeof(ArcheType<>).MakeGenericType(type))!;
+        impl.Bits = bits;
+
+        var meta = new ArcheTypeMeta
         {
             Type = type,
             IncludeTypes = include_types,
@@ -226,14 +199,14 @@ public static partial class ArcheTypes
             ArcheType = impl,
             Fields = fields,
         };
-        archeTypeUnitMetaCache.Add(unit.Type, unit);
-        return unit;
+        archeTypeMetaCache.Add(meta.Type, meta);
+        return meta;
     }
 
-    private static readonly ConditionalWeakTable<Type, ArcheTypeUnitMeta> archeTypeUnitMetaCache = new();
+    private static readonly ConditionalWeakTable<Type, ArcheTypeMeta> archeTypeMetaCache = new();
 
-    internal static ArcheTypeUnitMeta GetUnit(Type type) =>
-        archeTypeUnitMetaCache.TryGetValue(type, out var val) ? val : null!;
+    internal static ArcheTypeMeta GetMeta(Type type) =>
+        archeTypeMetaCache.TryGetValue(type, out var val) ? val : null!;
 
     #endregion
 }

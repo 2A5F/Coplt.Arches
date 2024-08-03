@@ -14,10 +14,6 @@ public record struct ArcheTypeOptions()
     /// </summary>
     public int Stride { get; set; }
     /// <summary>
-    /// Whether to split the managed type. If split, maximum of 2 <see cref="ArcheTypeUnitMeta"/> will be output.
-    /// </summary>
-    public bool SplitManaged { get; set; }
-    /// <summary>
     /// Default is generate class.<br/>
     /// <para>
     /// The accessor needs to input the class, when generate structure,
