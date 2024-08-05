@@ -88,5 +88,10 @@ public class Tests
         Console.WriteLine();
         at.UnsafeAccess(obj, 3, out (int a, float b, Vector128<float> c) acc3);
         Console.WriteLine(acc3);
+        
+        Console.WriteLine();
+        Console.WriteLine(at.IsSubset(TypeSet.Of<int, float>()));
+        Console.WriteLine(at.IsOverlap(TypeSet.Of<int, float>()));
+        Console.WriteLine(at.IsSubsetOf(TypeSet.Of<int, float>()));
     }
 }

@@ -179,16 +179,14 @@ public static partial class ArcheTypes
             var field = type.GetField($"{j}", BindingFlags.Public | BindingFlags.Instance)!;
             return new FieldMeta(field, EmitGetTypeMeta(field.FieldType), t, j);
         }).ToFrozenDictionary(static a => a.Type.Type, static a => a);
-
-
+        
         var type_meta = EmitGetTypeMeta(type);
 
-        var min_id = types.Min(static t => t.Id.Id);
-        var max_id = types.Max(static t => t.Id.Id);
-        var bits = Bits.Create(min_id, max_id, types.Select(static t => t.Id.Id));
+        var dyn_s = typeof(DynS<>).MakeGenericType(type);
+        dyn_s.GetProperty(nameof(DynS<int>.Types), BindingFlags.Public | BindingFlags.Static)!
+            .SetValue(null, types.ToImmutableHashSet());
 
         var impl = (AArcheType)Activator.CreateInstance(typeof(ArcheType<>).MakeGenericType(type))!;
-        impl.Bits = bits;
 
         var meta = new ArcheTypeMeta
         {

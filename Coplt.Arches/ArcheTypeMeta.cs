@@ -18,8 +18,6 @@ public record ArcheTypeMeta
 
 public abstract class AArcheType
 {
-    public Bits Bits { get; internal set; }
-    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public abstract object Create();
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -53,6 +51,15 @@ public abstract class AArcheType
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public abstract ArcheAccess DynamicAccess(Type acc);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract bool IsOverlap<Set>(Set set) where Set : struct, IS;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract bool IsSubset<Set>(Set set) where Set : struct, IS;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract bool IsSubsetOf<Set>(Set set) where Set : struct, IS;
 }
 
 internal class ArcheType<T> : AArcheType
@@ -86,6 +93,19 @@ internal class ArcheType<T> : AArcheType
             var method = ArcheAccesses.EmitAccess(typeof(T), acc);
             return method.CreateDelegate<ArcheAccess>();
         });
+
+    #endregion
+
+    #region TypeSet
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override bool IsOverlap<Set>(Set set) => TypeSetOverlapInfo<DynS<T>, Set>.IsOverlap;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override bool IsSubset<Set>(Set set) => TypeSetSubSetInfo<Set, DynS<T>>.IsSubsetOf;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override bool IsSubsetOf<Set>(Set set) => TypeSetSubSetInfo<DynS<T>, Set>.IsSubsetOf;
 
     #endregion
 }

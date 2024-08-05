@@ -6,14 +6,15 @@
 
 namespace Coplt.Arches;
 
-public static partial class ArcheTypes
+public static partial class TypeSet
 {
 <#
-    for (var i = 1; i <= 8; i++)
+    for (var i = 1; i <= 64; i++)
     {
         var types = string.Join(", ", Enumerable.Range(0, i).Select(n => $"T{n}"));
+        var set = i == 1 ? "S<T0>" : Enumerable.Range(1, i - 1).Select(n => $"T{n}").Aggregate("S<T0>", static (a, b) => $"S<{a}, {b}>");
 #>
-    public static TypeSet<<#= types #>> Of<<#= types #>>() => default;
+    public static <#= set #> Of<<#= types #>>() => default;
 <#
     }
 #>
