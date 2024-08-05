@@ -17,7 +17,7 @@ public struct TypeSet<Set> where Set : struct, IS
     } = ArcheTypes.SortType(default(Set).GetTypes());
 }
 
-public struct TypeSetOverlapInfo<A, B> where A : struct, IS where B : struct, IS
+public struct TypeIsOverlap<A, B> where A : struct, IS where B : struct, IS
 {
     public static bool IsOverlap
     {
@@ -26,11 +26,20 @@ public struct TypeSetOverlapInfo<A, B> where A : struct, IS where B : struct, IS
     } = default(A).GetTypes().Overlaps(default(B).GetTypes());
 }
 
-public struct TypeSetSubSetInfo<A, B> where A : struct, IS where B : struct, IS
+public struct TypeSetIsSubsetOf<A, B> where A : struct, IS where B : struct, IS
 {
     public static bool IsSubsetOf
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get;
     } = default(A).GetTypes().IsSubsetOf(default(B).GetTypes());
+}
+
+public struct TypeSetIsSupersetOf<A, B> where A : struct, IS where B : struct, IS
+{
+    public static bool IsSupersetOf
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+    } = default(A).GetTypes().IsSupersetOf(default(B).GetTypes());
 }

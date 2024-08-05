@@ -90,8 +90,9 @@ public class Tests
         Console.WriteLine(acc3);
         
         Console.WriteLine();
-        Console.WriteLine(at.IsSubset(TypeSet.Of<int, float>()));
-        Console.WriteLine(at.IsOverlap(TypeSet.Of<int, float>()));
+        Console.WriteLine(at.IsSupersetOf(TypeSet.Of<int, float>()));
         Console.WriteLine(at.IsSubsetOf(TypeSet.Of<int, float>()));
+        Console.WriteLine(at.IsOverlap(TypeSet.Of<int, float>()));
+        Assert.That(at.IsSupersetOf(TypeSet.Of<int, float>()), Is.True);
     }
 }
