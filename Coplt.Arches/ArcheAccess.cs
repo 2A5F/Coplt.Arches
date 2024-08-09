@@ -347,6 +347,10 @@ public static class ArcheAccesses
                 }
                 ilg.EmitCall(OpCodes.Callvirt, target, null);
 
+                if (target.ReturnType != typeof(void))
+                {
+                    ilg.Emit(OpCodes.Pop);
+                }
                 ilg.Emit(OpCodes.Ret);
                 return method;
             }

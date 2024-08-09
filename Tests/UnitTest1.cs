@@ -39,7 +39,7 @@ public class Tests
     }
 
 #if NET8_0_OR_GREATER
-    private delegate void AccCb(
+    private delegate int AccCb(
         int a, float b, ref int a1, in int a2, out int a3,
         Span<int> c, ReadOnlySpan<int> d,
         RoRef<int> e, RwRef<int> f
@@ -113,6 +113,7 @@ public class Tests
             {
                 Console.WriteLine($"{a}, {b}");
                 a3 = a2;
+                return 1;
             }
         );
 #endif
