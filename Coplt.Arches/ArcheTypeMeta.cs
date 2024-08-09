@@ -62,6 +62,22 @@ public abstract class AArcheType
 
     #endregion
 
+#if NET8_0_OR_GREATER
+    #region Callback Access
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract unsafe void UnsafeCallbackAccess<D>(object obj, nint offset, int index, D cb) where D : Delegate;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract unsafe void UnsafeCallbackAccess<D>(object obj, int index, D cb) where D : Delegate;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract ArcheCallbackAccess DynamicCallbackAccess(Type delegateType);
+
+    #endregion
+
+#endif
+
     #region TypeSet
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -72,7 +88,7 @@ public abstract class AArcheType
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public abstract bool IsSubsetOf<Set>(Set set) where Set : struct, IS;
-    
+
     #region TypeSet Arche Api
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -148,6 +164,37 @@ internal class ArcheType<T> : AArcheType
     #endregion
 
     #endregion
+
+#if NET8_0_OR_GREATER
+
+    #region Callback Access
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override void UnsafeCallbackAccess<D>(object obj, nint offset, int index, D cb) =>
+        ArcheAccesses.StaticCallbackAccess<T, D>.Access(obj, offset, index, cb);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override void UnsafeCallbackAccess<D>(object obj, int index, D cb) =>
+        ArcheAccesses.StaticCallbackAccess<T, D>.Access(obj, 0, index, cb);
+
+    #region DynamicAccess
+
+    // ReSharper disable once StaticMemberInGenericType
+    private static readonly ConditionalWeakTable<Type, ArcheCallbackAccess> cache_DynamicCallbackAccess = new();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override ArcheCallbackAccess DynamicCallbackAccess(Type delegateType) =>
+        cache_DynamicCallbackAccess.GetValue(delegateType, static delegateType =>
+        {
+            var method = ArcheAccesses.EmitCallbackAccess(typeof(T), delegateType);
+            return method.CreateDelegate<ArcheCallbackAccess>();
+        });
+
+    #endregion
+
+    #endregion
+
+#endif
 
     #region TypeSet
 

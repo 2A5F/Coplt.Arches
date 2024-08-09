@@ -6,10 +6,6 @@ Archetype is a dynamic structure
 This library includes dynamic archetype emit and access method emit  
 This is not ECS, but you can use it to implement an archetype based ECS  
 
-### Todo
-
-- [ ] Callback access generation  
-
 ### Example
 
 ```csharp
@@ -75,4 +71,22 @@ r.a++;
 // Access structures also support ref structures
 // Span, ReadOnlySpan will only have a length of 1
 
+
+// Also supports delegate access (net8+)
+
+delegate void AccCb(
+    int a, float b, ref int a1, in int a2, out int a3,
+    Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
+);
+
+at.UnsafeCallbackAccess<AccCb>(obj, 3,
+    (
+        int a, float b, ref int a1, in int a2, out int a3,
+        Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
+    ) =>
+    {
+        Console.WriteLine($"{a}, {b}");
+        a3 = a2;
+    }
+);
 ```

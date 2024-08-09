@@ -38,6 +38,14 @@ public class Tests
         public RoRef<Foo> foo;
     }
 
+#if NET8_0_OR_GREATER
+    private delegate void AccCb(
+        int a, float b, ref int a1, in int a2, out int a3,
+        Span<int> c, ReadOnlySpan<int> d,
+        RoRef<int> e, RwRef<int> f
+    );
+#endif
+
     [Test]
     public unsafe void Test1()
     {
@@ -84,15 +92,29 @@ public class Tests
         acc.v.V = Vector128.Create(1f, 2, 3, 4);
         Console.WriteLine(acc);
         Assert.That(acc.v.V, Is.EqualTo(Vector128.Create(1f, 2, 3, 4)));
-        
+
         Console.WriteLine();
         at.UnsafeAccess(obj, 3, out (int a, float b, Vector128<float> c) acc3);
         Console.WriteLine(acc3);
-        
+
         Console.WriteLine();
         Console.WriteLine(at.IsSupersetOf(TypeSet.Of<int, float>()));
         Console.WriteLine(at.IsSubsetOf(TypeSet.Of<int, float>()));
         Console.WriteLine(at.IsOverlap(TypeSet.Of<int, float>()));
         Assert.That(at.IsSupersetOf(TypeSet.Of<int, float>()), Is.True);
+
+#if NET8_0_OR_GREATER
+        Console.WriteLine();
+        at.UnsafeCallbackAccess<AccCb>(obj, 3,
+            (
+                int a, float b, ref int a1, in int a2, out int a3,
+                Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
+            ) =>
+            {
+                Console.WriteLine($"{a}, {b}");
+                a3 = a2;
+            }
+        );
+#endif
     }
 }
