@@ -422,7 +422,7 @@ public static class ArcheAccesses
 
                 var arche = ilg.DeclareLocal(typeof(void).MakeByRefType());
                 var access = ilg.DeclareLocal(delegateType);
-                var i = ilg.DeclareLocal(typeof(uint));
+                var cursor = ilg.DeclareLocal(typeof(uint));
 
                 ilg.Emit(OpCodes.Ldarg_0);
                 ilg.Emit(OpCodes.Conv_I);
@@ -443,10 +443,15 @@ public static class ArcheAccesses
                 ilg.Emit(OpCodes.Starg_S, (byte)2);
                 
                 ilg.Emit(OpCodes.Ldarg_3);
-                ilg.Emit(OpCodes.Stloc, i);
+                ilg.Emit(OpCodes.Ldarg_2);
+                ilg.Emit(OpCodes.Add);
+                ilg.Emit(OpCodes.Stloc, cursor);
                 
                 ilg.MarkLabel(loop);
-                ilg.Emit(OpCodes.Ldloc, i);
+                ilg.Emit(OpCodes.Ldloc, cursor);
+                ilg.Emit(OpCodes.Conv_I4);
+                ilg.Emit(OpCodes.Ldarg_2);
+                ilg.Emit(OpCodes.Sub);
                 ilg.Emit(OpCodes.Brtrue, loop_body);
                 ilg.Emit(OpCodes.Ret);
                 
@@ -468,9 +473,7 @@ public static class ArcheAccesses
                             ilg.Emit(OpCodes.Ldarg_0);
                             ilg.Emit(OpCodes.Ldloc, arche);
                             ilg.Emit(OpCodes.Ldflda, type_meta.Field);
-                            ilg.Emit(OpCodes.Ldarg_2);
-                            ilg.Emit(OpCodes.Ldloc, i);
-                            ilg.Emit(OpCodes.Add);
+                            ilg.Emit(OpCodes.Ldloc, cursor);
                             ilg.Emit(OpCodes.Sizeof, ty);
                             ilg.Emit(OpCodes.Conv_I);
                             ilg.Emit(OpCodes.Mul);
@@ -487,9 +490,7 @@ public static class ArcheAccesses
                             ilg.Emit(OpCodes.Ldarg_0);
                             ilg.Emit(OpCodes.Ldloc, arche);
                             ilg.Emit(OpCodes.Ldflda, type_meta.Field);
-                            ilg.Emit(OpCodes.Ldarg_2);
-                            ilg.Emit(OpCodes.Ldloc, i);
-                            ilg.Emit(OpCodes.Add);
+                            ilg.Emit(OpCodes.Ldloc, cursor);
                             ilg.Emit(OpCodes.Sizeof, ty);
                             ilg.Emit(OpCodes.Conv_I);
                             ilg.Emit(OpCodes.Mul);
@@ -506,9 +507,7 @@ public static class ArcheAccesses
                 
                             ilg.Emit(OpCodes.Ldloc, arche);
                             ilg.Emit(OpCodes.Ldflda, type_meta.Field);
-                            ilg.Emit(OpCodes.Ldarg_2);
-                            ilg.Emit(OpCodes.Ldloc, i);
-                            ilg.Emit(OpCodes.Add);
+                            ilg.Emit(OpCodes.Ldloc, cursor);
                             ilg.Emit(OpCodes.Sizeof, ty);
                             ilg.Emit(OpCodes.Conv_I);
                             ilg.Emit(OpCodes.Mul);
@@ -525,9 +524,7 @@ public static class ArcheAccesses
                 
                         ilg.Emit(OpCodes.Ldloc, arche);
                         ilg.Emit(OpCodes.Ldflda, type_meta.Field);
-                        ilg.Emit(OpCodes.Ldarg_2);
-                        ilg.Emit(OpCodes.Ldloc, i);
-                        ilg.Emit(OpCodes.Add);
+                        ilg.Emit(OpCodes.Ldloc, cursor);
                         ilg.Emit(OpCodes.Sizeof, ty);
                         ilg.Emit(OpCodes.Conv_I);
                         ilg.Emit(OpCodes.Mul);
@@ -541,9 +538,7 @@ public static class ArcheAccesses
                 
                         ilg.Emit(OpCodes.Ldloc, arche);
                         ilg.Emit(OpCodes.Ldflda, type_meta.Field);
-                        ilg.Emit(OpCodes.Ldarg_2);
-                        ilg.Emit(OpCodes.Ldloc, i);
-                        ilg.Emit(OpCodes.Add);
+                        ilg.Emit(OpCodes.Ldloc, cursor);
                         ilg.Emit(OpCodes.Sizeof, type);
                         ilg.Emit(OpCodes.Conv_I);
                         ilg.Emit(OpCodes.Mul);
@@ -566,10 +561,10 @@ public static class ArcheAccesses
                     ilg.Emit(OpCodes.Pop);
                 }
 
-                ilg.Emit(OpCodes.Ldloc, i);
+                ilg.Emit(OpCodes.Ldloc, cursor);
                 ilg.Emit(OpCodes.Ldc_I4_1);
                 ilg.Emit(OpCodes.Sub);
-                ilg.Emit(OpCodes.Stloc, i);
+                ilg.Emit(OpCodes.Stloc, cursor);
                 ilg.Emit(OpCodes.Br, loop);
 
                

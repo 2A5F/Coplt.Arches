@@ -50,7 +50,7 @@ record struct Acc
 // Automatically generate access bindings
 // The access structure can be on the heap, which means it can be passed in linq
 
-at.UnsafeAccess(chunk, 3, out Acc acc);
+at.UnsafeAccess(chunk, index: 3, out Acc acc);
 Console.WriteLine(acc);
 
 
@@ -65,7 +65,7 @@ ref struct RefAcc
 }
 ArcheAccess ref_acc = at.DynamicAccess(typeof(Acc));
 RefAcc r = default;
-ref_acc(chunk, 0, 3, &r);
+ref_acc(chunk, offset: 0, index: 3, &r);
 r.a++;
 
 // Access structures also support ref structures
@@ -79,12 +79,29 @@ delegate void AccCb(
     Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
 );
 
-at.UnsafeCallbackAccess<AccCb>(obj, 3,
+at.UnsafeCallbackAccess<AccCb>(obj, index: 3,
     (
         int a, float b, ref int a1, in int a2, out int a3,
         Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
     ) =>
     {
+        Console.WriteLine($"{a}, {b}");
+        a3 = a2;
+    }
+);
+
+// Support range delegate access, call delegates in reverse order
+
+at.UnsafeCallbackRangeAccess<AccCb>(obj, start: 3, length: 3,
+    (
+        int a, float b, ref int a1, in int a2, out int a3,
+        Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
+    ) =>
+    {
+        // Calling order:
+        // index 5
+        // index 4
+        // index 3
         Console.WriteLine($"{a}, {b}");
         a3 = a2;
     }
