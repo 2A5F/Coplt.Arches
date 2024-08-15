@@ -116,6 +116,19 @@ public class Tests
                 return 1;
             }
         );
+        
+        Console.WriteLine();
+        at.UnsafeCallbackRangeAccess<AccCb>(obj, 3, 3,
+            (
+                int a, float b, ref int a1, in int a2, out int a3,
+                Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
+            ) =>
+            {
+                Console.WriteLine($"{a}, {b}");
+                a3 = a2;
+                return 1;
+            }
+        );
 #endif
     }
 }

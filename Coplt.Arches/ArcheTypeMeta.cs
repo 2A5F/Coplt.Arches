@@ -63,6 +63,7 @@ public abstract class AArcheType
     #endregion
 
 #if NET8_0_OR_GREATER
+
     #region Callback Access
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -73,6 +74,21 @@ public abstract class AArcheType
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public abstract ArcheCallbackAccess DynamicCallbackAccess(Type delegateType);
+
+    #endregion
+
+    #region Callback Access
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract unsafe void UnsafeCallbackRangeAccess<D>(object obj, nint offset, int start, uint length, D cb)
+        where D : Delegate;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract unsafe void UnsafeCallbackRangeAccess<D>(object obj, int start, uint length, D cb)
+        where D : Delegate;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public abstract ArcheCallbackRangeAccess DynamicCallbackRangeAccess(Type delegateType);
 
     #endregion
 
@@ -188,6 +204,33 @@ internal class ArcheType<T> : AArcheType
         {
             var method = ArcheAccesses.EmitCallbackAccess(typeof(T), delegateType);
             return method.CreateDelegate<ArcheCallbackAccess>();
+        });
+
+    #endregion
+
+    #endregion
+
+    #region CallbackRange Access
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override void UnsafeCallbackRangeAccess<D>(object obj, nint offset, int start, uint length, D cb) =>
+        ArcheAccesses.StaticCallbackRangeAccess<T, D>.Access(obj, offset, start, length, cb);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override void UnsafeCallbackRangeAccess<D>(object obj, int start, uint length, D cb) =>
+        ArcheAccesses.StaticCallbackRangeAccess<T, D>.Access(obj, 0, start, length, cb);
+
+    #region DynamicAccess
+
+    // ReSharper disable once StaticMemberInGenericType
+    private static readonly ConditionalWeakTable<Type, ArcheCallbackRangeAccess> cache_DynamicCallbackRangeAccess = new();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override ArcheCallbackRangeAccess DynamicCallbackRangeAccess(Type delegateType) =>
+        cache_DynamicCallbackRangeAccess.GetValue(delegateType, static delegateType =>
+        {
+            var method = ArcheAccesses.EmitCallbackRangeAccess(typeof(T), delegateType);
+            return method.CreateDelegate<ArcheCallbackRangeAccess>();
         });
 
     #endregion
