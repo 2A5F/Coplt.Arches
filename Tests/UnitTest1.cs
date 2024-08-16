@@ -44,6 +44,29 @@ public class Tests
         Span<int> c, ReadOnlySpan<int> d,
         RoRef<int> e, RwRef<int> f
     );
+
+    private interface IAcc
+    {
+        public void A(
+            int a, float b, ref int a1, in int a2, out int a3,
+            Span<int> c, ReadOnlySpan<int> d,
+            RoRef<int> e, RwRef<int> f
+        );
+    }
+
+    private struct SAcc : IAcc
+    {
+        public int a;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void A(int a, float b, ref int a1, in int a2, out int a3, Span<int> c, ReadOnlySpan<int> d, RoRef<int> e,
+            RwRef<int> f)
+        {
+            Console.WriteLine($"{a}, {b}");
+            a3 = a2;
+            this.a += a;
+        }
+    }
 #endif
 
     [Test]
@@ -116,7 +139,7 @@ public class Tests
                 return 1;
             }
         );
-        
+
         Console.WriteLine();
         at.UnsafeDelegateRangeAccess<AccCb>(obj, 3, 3,
             (
@@ -129,6 +152,16 @@ public class Tests
                 return 1;
             }
         );
+
+        Console.WriteLine();
+        var s_acc = new SAcc();
+        at.UnsafeMethodAccess<IAcc, SAcc>(obj, 3, ref s_acc);
+        Console.WriteLine(s_acc.a);
+
+        Console.WriteLine();
+        var s_acc_2 = new SAcc();
+        at.UnsafeMethodRangeAccess<IAcc, SAcc>(obj, 3, 3, ref s_acc_2);
+        Console.WriteLine(s_acc_2.a);
 #endif
     }
 }

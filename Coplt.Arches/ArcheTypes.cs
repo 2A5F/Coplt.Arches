@@ -197,6 +197,7 @@ public static partial class ArcheTypes
             ArcheType = impl,
             Fields = fields,
         };
+        impl.Meta = meta;
         archeTypeMetaCache.Add(meta.Type, meta);
         return meta;
     }

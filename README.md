@@ -106,4 +106,40 @@ at.UnsafeDelegateRangeAccess<AccCb>(obj, start: 3, length: 3,
         a3 = a2;
     }
 );
+
+
+// Support method access. 
+// Need to provide an interface containing only one method to specify the method. 
+// This access can support inlining.
+
+interface IAcc
+{
+    public void A(
+        int a, float b, ref int a1, in int a2, out int a3,
+        Span<int> c, ReadOnlySpan<int> d,
+        RoRef<int> e, RwRef<int> f
+    );
+}
+
+struct SAcc : IAcc
+{
+    public int a;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void A(int a, float b, ref int a1, in int a2, out int a3, Span<int> c, ReadOnlySpan<int> d, RoRef<int> e,
+        RwRef<int> f)
+    {
+        Console.WriteLine($"{a}, {b}");
+        a3 = a2;
+        this.a += a;
+    }
+}
+
+var s_acc = new SAcc();
+at.UnsafeMethodAccess<IAcc, SAcc>(obj, 3, ref s_acc);
+Console.WriteLine(s_acc.a);
+
+var s_acc_2 = new SAcc();
+at.UnsafeMethodRangeAccess<IAcc, SAcc>(obj, 3, 3, ref s_acc_2);
+Console.WriteLine(s_acc_2.a);
 ```

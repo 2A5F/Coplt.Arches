@@ -7,12 +7,10 @@ namespace Coplt.Arches;
 
 public unsafe delegate void ArcheAccess(object obj, nint offset, int index, void* access);
 public unsafe delegate void ArcheRangeAccess(object obj, nint offset, int start, uint length, void* access);
-public delegate void ArcheCallbackAccess(object obj, nint offset, int index, Delegate access);
-public delegate void ArcheCallbackRangeAccess(object obj, nint offset, int start, uint length, Delegate access);
 public delegate void ArcheAccess<T>(object obj, nint offset, int index, ref T access);
 public delegate void ArcheRangeAccess<T>(object obj, nint offset, int start, uint length, ref T access);
-public delegate void ArcheAccess<T, I>(object obj, nint offset, int index, ref T access);
-public delegate void ArcheRangeAccess<T, I>(object obj, nint offset, int start, uint length, ref T access);
+public delegate void ArcheCallbackAccess(object obj, nint offset, int index, Delegate access);
+public delegate void ArcheCallbackRangeAccess(object obj, nint offset, int start, uint length, Delegate access);
 
 public static class ArcheAccesses
 {
@@ -61,7 +59,7 @@ public static class ArcheAccesses
 
 #if NET8_0_OR_GREATER
 
-    #region CallBack
+    #region Delegate
 
     private static readonly DelegateAccess delegate_access = new();
 
@@ -78,12 +76,12 @@ public static class ArcheAccesses
         // ReSharper disable once StaticMemberInGenericType
         public static readonly ArcheCallbackAccess Func = Method.CreateDelegate<ArcheCallbackAccess>();
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe void Access(object obj, nint offset, int index, D acc) => Func(obj, offset, index, acc);
+        public static void Access(object obj, nint offset, int index, D acc) => Func(obj, offset, index, acc);
     }
 
     #endregion
 
-    #region CallBack Range
+    #region Delegate Range
 
     private static readonly DelegateRangeAccess delegate_range_access = new();
 
@@ -92,7 +90,7 @@ public static class ArcheAccesses
         delegate_range_access.EmitAccess(meta, delegateType);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static MethodInfo EmitDelegateRangeAccess(Type unit_type, Type delegateType)=>
+    internal static MethodInfo EmitDelegateRangeAccess(Type unit_type, Type delegateType) =>
         delegate_range_access.EmitAccess(unit_type, delegateType);
 
     // private sealed class CallbackRangeContainer
@@ -277,7 +275,7 @@ public static class ArcheAccesses
     //     }
     // }
 
-    internal static class StaticCallbackRangeAccess<C, D> where D : Delegate
+    internal static class StaticDelegateRangeAccess<C, D> where D : Delegate
     {
         public static readonly MethodInfo Method =
             EmitDelegateRangeAccess(typeof(C), typeof(D));
@@ -286,6 +284,54 @@ public static class ArcheAccesses
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Access(object obj, nint offset, int start, uint length, D acc) =>
             Func(obj, offset, start, length, acc);
+    }
+
+    #endregion
+
+    #region Method
+
+    private static readonly MethodPointerAccess method_pointer_access = new();
+    private static readonly MethodRefAccess method_ref_access = new();
+
+    public static MethodInfo EmitMethodAccess(ArcheTypeMeta meta, Type interface_type, Type target_type) =>
+        method_pointer_access.EmitAccess(meta, interface_type, target_type);
+
+    internal static MethodInfo EmitMethodAccess(Type unit_type, Type interface_type, Type target_type) =>
+        method_pointer_access.EmitAccess(unit_type, interface_type, target_type);
+
+    internal static class StaticMethodAccess<C, I, T> where T : I
+    {
+        public static readonly MethodInfo Method =
+            method_ref_access.EmitAccess(typeof(C), typeof(I), typeof(T));
+        // ReSharper disable once StaticMemberInGenericType
+        public static readonly ArcheAccess<T> Func = Method.CreateDelegate<ArcheAccess<T>>();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Access(object obj, nint offset, int index, ref T acc) =>
+            Func(obj, offset, index, ref acc);
+    }
+
+    #endregion
+
+    #region MethodRange
+
+    private static readonly MethodPointerRangeAccess method_pointer_range_access = new();
+    private static readonly MethodRefRangeAccess method_ref_range_access = new();
+
+    public static MethodInfo EmitMethodRangeAccess(ArcheTypeMeta meta, Type interface_type, Type target_type) =>
+        method_pointer_range_access.EmitAccess(meta, interface_type, target_type);
+
+    internal static MethodInfo EmitMethodRangeAccess(Type unit_type, Type interface_type, Type target_type) =>
+        method_pointer_range_access.EmitAccess(unit_type, interface_type, target_type);
+
+    internal static class StaticMethodRangeAccess<C, I, T> where T : I
+    {
+        public static readonly MethodInfo Method =
+            method_ref_range_access.EmitAccess(typeof(C), typeof(I), typeof(T));
+        // ReSharper disable once StaticMemberInGenericType
+        public static readonly ArcheRangeAccess<T> Func = Method.CreateDelegate<ArcheRangeAccess<T>>();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Access(object obj, nint offset, int start, uint length, ref T acc) =>
+            Func(obj, offset, start, length, ref acc);
     }
 
     #endregion
