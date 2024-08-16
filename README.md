@@ -2,9 +2,32 @@
 
 [![Nuget](https://img.shields.io/nuget/v/Coplt.Arches)](https://www.nuget.org/packages/Coplt.Arches/)
 
-Archetype is a dynamic structure  
 This library includes dynamic archetype emit and access method emit  
 This is not ECS, but you can use it to implement an archetype based ECS  
+
+### Memory Layout
+
+```csharp
+// default chunk size is 16kb
+// N is stride or chunk capacity, automatically calculated based on chunk size and content size
+// or can manually specify the stride and then automatically calculate the chunk size
+
+struct chunk
+{
+    InlineArrayN<A> a;
+    InlineArrayN<B> b;
+    InlineArrayN<C> c;
+    ...
+}
+
+chunk
+[
+  [A, A, A, ...]
+  [B, B, B, ...]
+  [C, C, C, ...]
+  ...
+]
+```
 
 ### Example
 
