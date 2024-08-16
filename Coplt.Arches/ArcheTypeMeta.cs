@@ -31,25 +31,13 @@ public abstract class AArcheType
 
     #endregion
 
-    #region Access
+    #region Struct Access
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void UnsafeAccess<A>(object obj, nint offset, int index, out A acc)
-    {
-        fixed (A* p = &acc)
-        {
-            UnsafeAccess(obj, offset, index, p);
-        }
-    }
+    public abstract void UnsafeAccess<A>(object obj, nint offset, int index, out A acc);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void UnsafeAccess<A>(object obj, int index, out A acc)
-    {
-        fixed (A* p = &acc)
-        {
-            UnsafeAccess(obj, index, p);
-        }
-    }
+    public abstract void UnsafeAccess<A>(object obj, int index, out A acc);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public abstract unsafe void UnsafeAccess<A>(object obj, nint offset, int index, A* acc);
@@ -67,28 +55,28 @@ public abstract class AArcheType
     #region Callback Access
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract unsafe void UnsafeCallbackAccess<D>(object obj, nint offset, int index, D cb) where D : Delegate;
+    public abstract unsafe void UnsafeDelegateAccess<D>(object obj, nint offset, int index, D cb) where D : Delegate;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract unsafe void UnsafeCallbackAccess<D>(object obj, int index, D cb) where D : Delegate;
+    public abstract unsafe void UnsafeDelegateAccess<D>(object obj, int index, D cb) where D : Delegate;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract ArcheCallbackAccess DynamicCallbackAccess(Type delegateType);
+    public abstract ArcheCallbackAccess DynamicDelegateAccess(Type delegateType);
 
     #endregion
 
     #region Callback Access
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract unsafe void UnsafeCallbackRangeAccess<D>(object obj, nint offset, int start, uint length, D cb)
+    public abstract unsafe void UnsafeDelegateRangeAccess<D>(object obj, nint offset, int start, uint length, D cb)
         where D : Delegate;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract unsafe void UnsafeCallbackRangeAccess<D>(object obj, int start, uint length, D cb)
+    public abstract unsafe void UnsafeDelegateRangeAccess<D>(object obj, int start, uint length, D cb)
         where D : Delegate;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract ArcheCallbackRangeAccess DynamicCallbackRangeAccess(Type delegateType);
+    public abstract ArcheCallbackRangeAccess DynamicDelegateRangeAccess(Type delegateType);
 
     #endregion
 
@@ -155,7 +143,21 @@ internal class ArcheType<T> : AArcheType
     #endregion
 
     #region Access
-
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override void UnsafeAccess<A>(object obj, IntPtr offset, int index, out A acc)
+    {
+        Unsafe.SkipInit(out acc);
+        ArcheAccesses.StaticRefAccess<T, A>.Access(obj, offset, index, ref acc);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override void UnsafeAccess<A>(object obj, int index, out A acc)
+    {
+        Unsafe.SkipInit(out acc);
+        ArcheAccesses.StaticRefAccess<T, A>.Access(obj, 0, index, ref acc);
+    }
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override unsafe void UnsafeAccess<A>(object obj, nint offset, int index, A* acc) =>
         ArcheAccesses.StaticAccess<T, A>.Access(obj, offset, index, acc);
@@ -186,23 +188,23 @@ internal class ArcheType<T> : AArcheType
     #region Callback Access
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override void UnsafeCallbackAccess<D>(object obj, nint offset, int index, D cb) =>
-        ArcheAccesses.StaticCallbackAccess<T, D>.Access(obj, offset, index, cb);
+    public override void UnsafeDelegateAccess<D>(object obj, nint offset, int index, D cb) =>
+        ArcheAccesses.StaticDelegateAccess<T, D>.Access(obj, offset, index, cb);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override void UnsafeCallbackAccess<D>(object obj, int index, D cb) =>
-        ArcheAccesses.StaticCallbackAccess<T, D>.Access(obj, 0, index, cb);
+    public override void UnsafeDelegateAccess<D>(object obj, int index, D cb) =>
+        ArcheAccesses.StaticDelegateAccess<T, D>.Access(obj, 0, index, cb);
 
     #region DynamicAccess
 
     // ReSharper disable once StaticMemberInGenericType
-    private static readonly ConditionalWeakTable<Type, ArcheCallbackAccess> cache_DynamicCallbackAccess = new();
+    private static readonly ConditionalWeakTable<Type, ArcheCallbackAccess> cache_DynamicDelegateAccess = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override ArcheCallbackAccess DynamicCallbackAccess(Type delegateType) =>
-        cache_DynamicCallbackAccess.GetValue(delegateType, static delegateType =>
+    public override ArcheCallbackAccess DynamicDelegateAccess(Type delegateType) =>
+        cache_DynamicDelegateAccess.GetValue(delegateType, static delegateType =>
         {
-            var method = ArcheAccesses.EmitCallbackAccess(typeof(T), delegateType);
+            var method = ArcheAccesses.EmitDelegateAccess(typeof(T), delegateType);
             return method.CreateDelegate<ArcheCallbackAccess>();
         });
 
@@ -213,23 +215,23 @@ internal class ArcheType<T> : AArcheType
     #region CallbackRange Access
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override void UnsafeCallbackRangeAccess<D>(object obj, nint offset, int start, uint length, D cb) =>
+    public override void UnsafeDelegateRangeAccess<D>(object obj, nint offset, int start, uint length, D cb) =>
         ArcheAccesses.StaticCallbackRangeAccess<T, D>.Access(obj, offset, start, length, cb);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override void UnsafeCallbackRangeAccess<D>(object obj, int start, uint length, D cb) =>
+    public override void UnsafeDelegateRangeAccess<D>(object obj, int start, uint length, D cb) =>
         ArcheAccesses.StaticCallbackRangeAccess<T, D>.Access(obj, 0, start, length, cb);
 
     #region DynamicAccess
 
     // ReSharper disable once StaticMemberInGenericType
-    private static readonly ConditionalWeakTable<Type, ArcheCallbackRangeAccess> cache_DynamicCallbackRangeAccess = new();
+    private static readonly ConditionalWeakTable<Type, ArcheCallbackRangeAccess> cache_DynamicDelegateRangeAccess = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override ArcheCallbackRangeAccess DynamicCallbackRangeAccess(Type delegateType) =>
-        cache_DynamicCallbackRangeAccess.GetValue(delegateType, static delegateType =>
+    public override ArcheCallbackRangeAccess DynamicDelegateRangeAccess(Type delegateType) =>
+        cache_DynamicDelegateRangeAccess.GetValue(delegateType, static delegateType =>
         {
-            var method = ArcheAccesses.EmitCallbackRangeAccess(typeof(T), delegateType);
+            var method = ArcheAccesses.EmitDelegateRangeAccess(typeof(T), delegateType);
             return method.CreateDelegate<ArcheCallbackRangeAccess>();
         });
 

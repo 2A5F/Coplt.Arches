@@ -79,7 +79,7 @@ delegate void AccCb(
     Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
 );
 
-at.UnsafeCallbackAccess<AccCb>(obj, index: 3,
+at.UnsafeDelegateAccess<AccCb>(obj, index: 3,
     (
         int a, float b, ref int a1, in int a2, out int a3,
         Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
@@ -92,7 +92,7 @@ at.UnsafeCallbackAccess<AccCb>(obj, index: 3,
 
 // Support range delegate access, call delegates in reverse order
 
-at.UnsafeCallbackRangeAccess<AccCb>(obj, start: 3, length: 3,
+at.UnsafeDelegateRangeAccess<AccCb>(obj, start: 3, length: 3,
     (
         int a, float b, ref int a1, in int a2, out int a3,
         Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f

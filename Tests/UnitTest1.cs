@@ -105,7 +105,7 @@ public class Tests
 
 #if NET8_0_OR_GREATER
         Console.WriteLine();
-        at.UnsafeCallbackAccess<AccCb>(obj, 3,
+        at.UnsafeDelegateAccess<AccCb>(obj, 3,
             (
                 int a, float b, ref int a1, in int a2, out int a3,
                 Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
@@ -118,7 +118,7 @@ public class Tests
         );
         
         Console.WriteLine();
-        at.UnsafeCallbackRangeAccess<AccCb>(obj, 3, 3,
+        at.UnsafeDelegateRangeAccess<AccCb>(obj, 3, 3,
             (
                 int a, float b, ref int a1, in int a2, out int a3,
                 Span<int> c, ReadOnlySpan<int> d, RoRef<int> e, RwRef<int> f
