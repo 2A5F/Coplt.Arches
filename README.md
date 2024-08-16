@@ -10,9 +10,9 @@ This is not ECS, but you can use it to implement an archetype based ECS
 ```csharp
 // default chunk size is 16kb
 // N is stride or chunk capacity, automatically calculated based on chunk size and content size
-// or can manually specify the stride and then automatically calculate the chunk size
+// or manually specify the stride and then automatically calculate the chunk size
 
-struct chunk
+struct Chunk
 {
     InlineArrayN<A> a;
     InlineArrayN<B> b;
@@ -20,7 +20,7 @@ struct chunk
     ...
 }
 
-chunk
+Chunk
 [
   [A, A, A, ...]
   [B, B, B, ...]
